@@ -27,15 +27,19 @@ async def on_message(message):
     member_ids = (member.id for member in message.mentions)
     if client.user.id in member_ids:
         if 'stop' in message.content:
-            if turn_off_instance():
-                await message.channel.send('AWS Instance stopping')
+            if not is_stopping() and is_on():
+                if turn_off_instance():
+                    await message.channel.send('AWS Instance stopping')
+                else:
+                    await message.channel.send('Error stopping AWS Instance, try again in a bit')
             else:
-                await message.channel.send('Error stopping AWS Instance')
+                await message.channel.send('AWS Instance is already stopping or is off')
         elif 'start' in message.content:
-            if turn_on_instance():
-                await message.channel.send('AWS Instance starting')
-            else:
-                await message.channel.send('Error starting AWS Instance')
+            if not is_on():
+                if turn_on_instance():
+                    await message.channel.send('AWS Instance starting')
+                else:
+                    await message.channel.send('Error starting AWS Instance, try again in a bit')
         elif 'status' in message.content:
             await message.channel.send('AWS Instance state is currently: ' + get_instance_state_string())
         elif 'reboot' in message.content:
@@ -60,6 +64,27 @@ def turn_on_instance():
 
 def get_instance_state_string():
     return instance.state['Name']
+
+def is_stopping():
+    status = get_instance_state_string()
+    if status == "stopping":
+        return True
+    else:
+        return False
+
+def is_on():
+    status = get_instance_state_string()
+    if status == "running":
+        return True
+    else:
+        return False
+
+def is_starting():
+    status = get_instance_state_string()
+    if status == "pending":
+        return True
+    else:
+        return False
 
 def reboot_instance():
     try:
