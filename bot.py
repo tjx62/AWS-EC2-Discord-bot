@@ -35,7 +35,7 @@ async def on_message(message):
             else:
                 await message.channel.send('AWS Instance is already stopping or is off')
         elif 'start' in message.content:
-            if not is_on():
+            if not is_on() and not is_stopping():
                 if turn_on_instance():
                     await message.channel.send('AWS Instance starting')
                 else:
