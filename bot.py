@@ -1,4 +1,4 @@
-import discord, boto3
+import discord, boto3, time
 
 client = discord.Client()
 
@@ -25,6 +25,8 @@ print("AWS instance is currently: " + instance.state['Name'].upper())
 @client.event
 async def on_message(message):
     member_ids = (member.id for member in message.mentions)
+    author_roles = message.author.roles()
+    admin_role = 'DM'
     if client.user.id in member_ids:
         if 'stop' in message.content:
             if not is_stopping() and is_on():
@@ -36,10 +38,20 @@ async def on_message(message):
                 await message.channel.send('AWS Instance is already stopping or is off')
         elif 'start' in message.content:
             if not is_on() and not is_stopping():
-                if turn_on_instance():
-                    await message.channel.send('AWS Instance starting')
+                if admin_role in author_roles:
+                    if turn_on_instance():
+                        await message.channel.send('AWS Instance starting')
+                    else:
+                        await message.channel.send('Error starting AWS Instance, try again in a bit')
                 else:
-                    await message.channel.send('Error starting AWS Instance, try again in a bit')
+                    if turn_on_instance():
+                        await message.channel.send('AWS Instance starting for 1 hour')
+                        time.sleep(3300)
+                        await message.channel.send('AWS Instance shutting down in 5 minutes')
+                        time.sleep(300)
+                        await message.channel.send('AWS Instance shutting down')
+                    else:
+                        await message.channel.send('Error starting AWS Instance, try again in a bit')
         elif 'status' in message.content:
             await message.channel.send('AWS Instance state is currently: ' + get_instance_state_string())
         elif 'reboot' in message.content:
